@@ -47,18 +47,13 @@ func charIndex(url string, c byte) []int {
 }
 
 func domainSearch(Domain map[string]DomainType, url string, isIP bool) (domainType DomainType, ok bool) {
-	if isIP {
-		if v, ok := Domain[url]; ok {
-			return v, ok
-		}
+	if v, ok := Domain[url]; ok || isIP {
+		return v, ok
 	}
 
 	indexes := charIndex(url, '.')
 	n := len(indexes)
 	if n > MAX_URL_DOT {
-		if v, ok := Domain[url]; ok {
-			return v, ok
-		}
 		indexes = indexes[n-MAX_URL_DOT:]
 		n = MAX_URL_DOT
 	}
