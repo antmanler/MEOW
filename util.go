@@ -298,9 +298,6 @@ func hostIsIP(host string) (isIP, isPrivate bool) {
 		return false, false
 	}
 	for _, i := range part {
-		if len(i) == 0 || len(i) > 3 {
-			return false, false
-		}
 		n, err := strconv.Atoi(i)
 		if err != nil || n < 0 || n > 255 {
 			return false, false

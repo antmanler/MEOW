@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/cyfdecyf/bufio"
 	"net"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/cyfdecyf/bufio"
 )
 
 type DirectList struct {
@@ -21,6 +22,7 @@ const (
 	domainTypeProxy
 	domainTypeReject
 )
+const MAX_URL_DOT = 5
 
 func newDirectList() *DirectList {
 	return &DirectList{
@@ -28,27 +30,63 @@ func newDirectList() *DirectList {
 	}
 }
 
+func charIndex(url string, c byte) []int {
+	indexes := make([]int, 0, MAX_URL_DOT+1)
+	n := len(url)
+
+	if n <= 1 {
+		return indexes
+	}
+
+	for i := 0; i < n-1; i++ {
+		if url[i] == c {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
+}
+
+func domainSearch(Domain map[string]DomainType, url string, isIP bool) (domainType DomainType, ok bool) {
+	if isIP {
+		if v, ok := Domain[url]; ok {
+			return v, ok
+		}
+	}
+
+	indexes := charIndex(url, '.')
+	n := len(indexes)
+	if n > MAX_URL_DOT {
+		if v, ok := Domain[url]; ok {
+			return v, ok
+		}
+		indexes = indexes[n-MAX_URL_DOT:]
+		n = MAX_URL_DOT
+	}
+
+	for i := 0; i < n; i++ {
+		url_suffix := url[indexes[i]+1:]
+		if v, ok := Domain[url_suffix]; ok {
+			return v, ok
+		}
+	}
+
+	return domainTypeUnknown, false
+}
+
 func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
 	debug.Printf("judging host: %s", url.Host)
+
 	if parentProxy.empty() { // no way to retry, so always visit directly
 		return domainTypeDirect
 	}
+
 	if url.Domain == "" { // simple host or private ip
 		return domainTypeDirect
 	}
-	if directList.Domain[url.Host] == domainTypeDirect || directList.Domain[url.Domain] == domainTypeDirect {
-		debug.Printf("host or domain should direct")
-		return domainTypeDirect
-	}
 
-	if directList.Domain[url.Host] == domainTypeProxy || directList.Domain[url.Domain] == domainTypeProxy {
-		debug.Printf("host or domain should using proxy")
-		return domainTypeProxy
-	}
-
-	if directList.Domain[url.Host] == domainTypeReject || directList.Domain[url.Domain] == domainTypeReject {
-		debug.Printf("host or domain should reject")
-		return domainTypeReject
+	isIP, isPrivate := hostIsIP(url.Host)
+	if v, ok := domainSearch(directList.Domain, url.Host, isIP); ok {
+		return v
 	}
 
 	if !config.JudgeByIP {
@@ -56,7 +94,6 @@ func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
 	}
 
 	var ip string
-	isIP, isPrivate := hostIsIP(url.Host)
 	if isIP {
 		if isPrivate {
 			directList.add(url.Host, domainTypeDirect)
