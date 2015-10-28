@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/cyfdecyf/bufio"
 	"net"
 	"os"
 	"path"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/cyfdecyf/bufio"
 )
 
 const (
@@ -59,7 +60,8 @@ type Config struct {
 	EstimateTimeout bool // if run estimateTimeout()
 
 	// not config option
-	saveReqLine bool // for http and meow parent, should save request line from client
+	saveReqLine bool   // for http and meow parent, should save request line from client
+	UserAgent   string //override user-agent of http request
 }
 
 var config Config
@@ -92,6 +94,7 @@ func parseCmdLineConfig() *Config {
 	flag.StringVar(&listenAddr, "listen", "", "listen address, disables listen in config")
 	flag.IntVar(&c.Core, "core", 2, "number of cores to use")
 	flag.StringVar(&c.LogFile, "logFile", "", "write output to file")
+	flag.StringVar(&c.UserAgent, "useragent", "", "override user-agent of http request")
 	flag.BoolVar(&c.PrintVer, "version", false, "print version")
 	flag.BoolVar(&c.EstimateTimeout, "estimate", true, "enable/disable estimate timeout")
 
@@ -142,6 +145,12 @@ func parseDuration(val, msg string) (d time.Duration) {
 	if d, err = time.ParseDuration(val); err != nil {
 		Fatalf("%s %v\n", msg, err)
 	}
+	return
+}
+
+func parseString(val string) (s string) {
+	s = strings.TrimLeft(val, `"'`)
+	s = strings.TrimRight(s, `"'`)
 	return
 }
 
@@ -543,6 +552,10 @@ func (p configParser) ParseDialTimeout(val string) {
 
 func (p configParser) ParseJudgeByIP(val string) {
 	config.JudgeByIP = parseBool(val, "judgeByIP")
+}
+
+func (p configParser) ParseUseragent(val string) {
+	config.UserAgent = parseString(val)
 }
 
 // overrideConfig should contain options from command line to override options
