@@ -62,6 +62,8 @@ type Config struct {
 	// not config option
 	saveReqLine bool   // for http and meow parent, should save request line from client
 	UserAgent   string //override user-agent of http request
+	Cert        string
+	Key         string
 }
 
 var config Config
@@ -97,6 +99,8 @@ func parseCmdLineConfig() *Config {
 	flag.StringVar(&c.UserAgent, "useragent", "", "override user-agent of http request")
 	flag.BoolVar(&c.PrintVer, "version", false, "print version")
 	flag.BoolVar(&c.EstimateTimeout, "estimate", true, "enable/disable estimate timeout")
+	flag.StringVar(&c.Cert, "cert", "", "cert for local https proxy")
+	flag.StringVar(&c.Key, "key", "", "key for local https proxy")
 
 	flag.Parse()
 
@@ -256,13 +260,19 @@ func (pp proxyParser) ProxyMeow(val string) {
 // listenParser provides functions to parse different types of listen addresses
 type listenParser struct{}
 
-func (lp listenParser) ListenHttp(val string) {
+func (lp listenParser) ListenHttp(val string, ishttps bool) {
+	var proto string
 	if cmdHasListenAddr {
 		return
 	}
+	if ishttps {
+		proto = "https"
+	} else {
+		proto = "http"
+	}
 	arr := strings.Fields(val)
 	if len(arr) > 2 {
-		Fatal("too many fields in listen = http://", val)
+		Fatal("too many fields in listen =", proto, val)
 	}
 
 	var addr, addrInPAC string
@@ -272,9 +282,9 @@ func (lp listenParser) ListenHttp(val string) {
 	}
 
 	if err := checkServerAddr(addr); err != nil {
-		Fatal("listen http server", err)
+		Fatal("listen", proto, "server", err)
 	}
-	addListenProxy(newHttpProxy(addr, addrInPAC))
+	addListenProxy(newHttpProxy(addr, addrInPAC, ishttps))
 }
 
 func (lp listenParser) ListenMeow(val string) {
@@ -311,6 +321,7 @@ func (p configParser) ParseProxy(val string) {
 }
 
 func (p configParser) ParseListen(val string) {
+	https := false
 	if cmdHasListenAddr {
 		return
 	}
@@ -330,11 +341,15 @@ func (p configParser) ParseListen(val string) {
 	}
 
 	methodName := "Listen" + strings.ToUpper(protocol[0:1]) + protocol[1:]
+	if methodName == "ListenHttps" {
+		methodName = "ListenHttp"
+		https = true
+	}
 	method := parser.MethodByName(methodName)
 	if method == zeroMethod {
 		Fatalf("no such listen protocol \"%s\"\n", arr[0])
 	}
-	args := []reflect.Value{reflect.ValueOf(server)}
+	args := []reflect.Value{reflect.ValueOf(server), reflect.ValueOf(https)}
 	method.Call(args)
 }
 
@@ -558,6 +573,14 @@ func (p configParser) ParseUseragent(val string) {
 	config.UserAgent = parseString(val)
 }
 
+func (p configParser) ParseCert(val string) {
+	config.Cert = parseString(val)
+}
+
+func (p configParser) ParseKey(val string) {
+	config.Key = parseString(val)
+}
+
 // overrideConfig should contain options from command line to override options
 // in config file.
 func parseConfig(rc string, override *Config) {
@@ -711,6 +734,6 @@ func checkConfig() {
 	checkShadowsocks()
 	// listenAddr must be handled first, as addrInPAC dependends on this.
 	if listenProxy == nil {
-		listenProxy = []Proxy{newHttpProxy(defaultListenAddr, "")}
+		listenProxy = []Proxy{newHttpProxy(defaultListenAddr, "", false)}
 	}
 }
