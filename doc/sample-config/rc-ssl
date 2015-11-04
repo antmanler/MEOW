@@ -1,0 +1,4 @@
+listen = https://0.0.0.0:443
+cert = "/path/to/cert.pem"
+key = "/path/to/key.pem"
+userPasswd = user:pass

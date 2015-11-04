@@ -61,7 +61,6 @@ type Config struct {
 
 	// not config option
 	saveReqLine bool   // for http and meow parent, should save request line from client
-	UserAgent   string //override user-agent of http request
 	Cert        string
 	Key         string
 }
@@ -96,7 +95,6 @@ func parseCmdLineConfig() *Config {
 	flag.StringVar(&listenAddr, "listen", "", "listen address, disables listen in config")
 	flag.IntVar(&c.Core, "core", 2, "number of cores to use")
 	flag.StringVar(&c.LogFile, "logFile", "", "write output to file")
-	flag.StringVar(&c.UserAgent, "useragent", "", "override user-agent of http request")
 	flag.BoolVar(&c.PrintVer, "version", false, "print version")
 	flag.BoolVar(&c.EstimateTimeout, "estimate", true, "enable/disable estimate timeout")
 	flag.StringVar(&c.Cert, "cert", "", "cert for local https proxy")
@@ -567,10 +565,6 @@ func (p configParser) ParseDialTimeout(val string) {
 
 func (p configParser) ParseJudgeByIP(val string) {
 	config.JudgeByIP = parseBool(val, "judgeByIP")
-}
-
-func (p configParser) ParseUseragent(val string) {
-	config.UserAgent = parseString(val)
 }
 
 func (p configParser) ParseCert(val string) {

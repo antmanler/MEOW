@@ -560,10 +560,6 @@ func (h *Header) parseHeader(reader *bufio.Reader, raw *bytes.Buffer, url *URL) 
 			continue
 		}
 
-		if len(h.Host) != 0 && string(line[0:10]) == "User-Agent" && len(config.UserAgent) != 0 {
-			UA := fmt.Sprintf("User-Agent: %s\r\n", config.UserAgent)
-			line = []byte(UA)
-		}
 		raw.Write(line)
 		// debug.Printf("len %d %s", len(s), s)
 	}
