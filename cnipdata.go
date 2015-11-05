@@ -3,7 +3,7 @@ package main
 var CNIPDataStart []uint32
 var CNIPDataNum []uint
 
-//data range by firest byte
+//data range by first byte
 var CNIPDataRange [256]struct {
 	start int
 	end   int
