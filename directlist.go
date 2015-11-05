@@ -22,7 +22,7 @@ const (
 	domainTypeProxy
 	domainTypeReject
 )
-const MAX_URL_DOT = 5
+const maxHostPart = 5
 
 func newDirectList() *DirectList {
 	return &DirectList{
@@ -30,34 +30,34 @@ func newDirectList() *DirectList {
 	}
 }
 
-func charIndex(url string, c byte) []int {
-	indexes := make([]int, 0, MAX_URL_DOT+1)
-	n := len(url)
+func charIndex(host string, c byte) []int {
+	indices := make([]int, 0, maxHostPart+1)
+	n := len(host)
 
 	if n <= 1 {
-		return indexes
+		return indices
 	}
 
 	for i := 0; i < n-1; i++ {
-		if url[i] == c {
-			indexes = append(indexes, i)
+		if host[i] == c {
+			indices = append(indices, i)
 		}
 	}
-	return indexes
+	return indices
 }
 
-func domainSearch(Domain map[string]DomainType, url string, isIP bool) (domainType DomainType, ok bool) {
-	if domainType, ok = Domain[url]; !ok && !isIP {
-		indexes := charIndex(url, '.')
-		n := len(indexes)
-		if n > MAX_URL_DOT {
-			indexes = indexes[n-MAX_URL_DOT:]
-			n = MAX_URL_DOT
+func domainSearch(domain map[string]DomainType, host string, isIP bool) (domainType DomainType, ok bool) {
+	if domainType, ok = domain[host]; !ok && !isIP {
+		indices := charIndex(host, '.')
+		n := len(indices)
+		if n > maxHostPart {
+			indices = indices[n-maxHostPart:]
+			n = maxHostPart
 		}
 
 		for i := 0; i < n; i++ {
-			url_suffix := url[indexes[i]+1:]
-			if domainType, ok = Domain[url_suffix]; ok {
+			suffix := host[indices[i]+1:]
+			if domainType, ok = domain[suffix]; ok {
 				break
 			}
 		}
