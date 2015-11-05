@@ -47,33 +47,34 @@ func charIndex(url string, c byte) []int {
 }
 
 func domainSearch(Domain map[string]DomainType, url string, isIP bool) (domainType DomainType, ok bool) {
-	if v, ok := Domain[url]; ok || isIP {
-		return v, ok
-	}
+	if domainType, ok = Domain[url]; !ok && !isIP {
+		indexes := charIndex(url, '.')
+		n := len(indexes)
+		if n > MAX_URL_DOT {
+			indexes = indexes[n-MAX_URL_DOT:]
+			n = MAX_URL_DOT
+		}
 
-	indexes := charIndex(url, '.')
-	n := len(indexes)
-	if n > MAX_URL_DOT {
-		indexes = indexes[n-MAX_URL_DOT:]
-		n = MAX_URL_DOT
-	}
-
-	for i := 0; i < n; i++ {
-		url_suffix := url[indexes[i]+1:]
-		if v, ok := Domain[url_suffix]; ok {
-			return v, ok
+		for i := 0; i < n; i++ {
+			url_suffix := url[indexes[i]+1:]
+			if domainType, ok = Domain[url_suffix]; ok {
+				break
+			}
 		}
 	}
 
-	return domainTypeUnknown, false
+	if parentProxy.empty() {
+		if domainType == domainTypeReject {
+			return domainTypeReject, true
+		} else {
+			return domainTypeDirect, true
+		}
+	}
+	return
 }
 
 func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
 	debug.Printf("judging host: %s", url.Host)
-
-	if parentProxy.empty() { // no way to retry, so always visit directly
-		return domainTypeDirect
-	}
 
 	if url.Domain == "" { // simple host or private ip
 		return domainTypeDirect
