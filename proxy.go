@@ -107,16 +107,12 @@ type httpProxy struct {
 	proto     string
 }
 
-func newHttpProxy(addr, addrInPAC string, ishttps bool) *httpProxy {
+func newHttpProxy(addr, addrInPAC string, proto string) *httpProxy {
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		panic("proxy addr" + err.Error())
 	}
-	if ishttps == false {
-		return &httpProxy{addr, port, addrInPAC, "http"}
-	} else {
-		return &httpProxy{addr, port, addrInPAC, "https"}
-	}
+	return &httpProxy{addr, port, addrInPAC, proto}
 }
 
 func (proxy *httpProxy) genConfig() string {

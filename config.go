@@ -60,7 +60,7 @@ type Config struct {
 	EstimateTimeout bool // if run estimateTimeout()
 
 	// not config option
-	saveReqLine bool   // for http and meow parent, should save request line from client
+	saveReqLine bool // for http and meow parent, should save request line from client
 	Cert        string
 	Key         string
 }
@@ -258,16 +258,11 @@ func (pp proxyParser) ProxyMeow(val string) {
 // listenParser provides functions to parse different types of listen addresses
 type listenParser struct{}
 
-func (lp listenParser) ListenHttp(val string, ishttps bool) {
-	var proto string
+func (lp listenParser) ListenHttp(val string, proto string) {
 	if cmdHasListenAddr {
 		return
 	}
-	if ishttps {
-		proto = "https"
-	} else {
-		proto = "http"
-	}
+
 	arr := strings.Fields(val)
 	if len(arr) > 2 {
 		Fatal("too many fields in listen =", proto, val)
@@ -282,7 +277,7 @@ func (lp listenParser) ListenHttp(val string, ishttps bool) {
 	if err := checkServerAddr(addr); err != nil {
 		Fatal("listen", proto, "server", err)
 	}
-	addListenProxy(newHttpProxy(addr, addrInPAC, ishttps))
+	addListenProxy(newHttpProxy(addr, addrInPAC, proto))
 }
 
 func (lp listenParser) ListenMeow(val string) {
@@ -319,7 +314,6 @@ func (p configParser) ParseProxy(val string) {
 }
 
 func (p configParser) ParseListen(val string) {
-	https := false
 	if cmdHasListenAddr {
 		return
 	}
@@ -341,13 +335,12 @@ func (p configParser) ParseListen(val string) {
 	methodName := "Listen" + strings.ToUpper(protocol[0:1]) + protocol[1:]
 	if methodName == "ListenHttps" {
 		methodName = "ListenHttp"
-		https = true
 	}
 	method := parser.MethodByName(methodName)
 	if method == zeroMethod {
 		Fatalf("no such listen protocol \"%s\"\n", arr[0])
 	}
-	args := []reflect.Value{reflect.ValueOf(server), reflect.ValueOf(https)}
+	args := []reflect.Value{reflect.ValueOf(server), reflect.ValueOf(protocol)}
 	method.Call(args)
 }
 
@@ -728,6 +721,6 @@ func checkConfig() {
 	checkShadowsocks()
 	// listenAddr must be handled first, as addrInPAC dependends on this.
 	if listenProxy == nil {
-		listenProxy = []Proxy{newHttpProxy(defaultListenAddr, "", false)}
+		listenProxy = []Proxy{newHttpProxy(defaultListenAddr, "", "http")}
 	}
 }
