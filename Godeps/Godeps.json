@@ -1,0 +1,43 @@
+{
+	"ImportPath": "github.com/antmanler/MEOW",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/codahale/chacha20",
+			"Rev": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953"
+		},
+		{
+			"ImportPath": "github.com/cyfdecyf/bufio",
+			"Rev": "9601756e2a6b5fa8ca6749ce4f73f6afdd83030d"
+		},
+		{
+			"ImportPath": "github.com/cyfdecyf/color",
+			"Rev": "31d518c963d22b95d500ab628c1d1d1b8eff2ab9"
+		},
+		{
+			"ImportPath": "github.com/cyfdecyf/leakybuf",
+			"Comment": "1.0",
+			"Rev": "ffae040843bee2891b6306d1d085c25ca822e72c"
+		},
+		{
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/shadowsocks",
+			"Comment": "1.1.4-4-g2b4d9d7",
+			"Rev": "2b4d9d7c839f2939ec6a96cc423dea44319e848b"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/cast5",
+			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
+			"Rev": "575fdbe86e5dd89229707ebec0575ce7d088a4a6"
+		}
+	]
+}

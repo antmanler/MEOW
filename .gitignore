@@ -6,3 +6,5 @@ MEOW.exe
 direct.txt
 rc.txt
 rc-full.txt
+build/
+release/

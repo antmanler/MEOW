@@ -7,6 +7,11 @@ import (
 	"sync"
 )
 
+var (
+	version = "dev"
+	gitRev  = "dev"
+)
+
 func main() {
 	// Parse flags after load config to allow override options in config
 	cmdLineConfig := parseCmdLineConfig()
@@ -17,10 +22,10 @@ func main() {
 
 	fmt.Printf(`
        /\
-   )  ( ')     MEOW Proxy %s
+   )  ( ')     MEOW Proxy %s (git: %s)
   (  /  )      http://renzhn.github.io/MEOW/
-   \(__)|      
-	`, version)
+   \(__)|
+	`, version, gitRev)
 	fmt.Println()
 
 	parseConfig(cmdLineConfig.RcFile, cmdLineConfig)
