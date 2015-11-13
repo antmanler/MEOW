@@ -303,7 +303,7 @@ func (lp listenParser) ListenHttp(val string, proto string) {
 	addListenProxy(newHttpProxy(addr, addrInPAC, proto))
 }
 
-func (lp listenParser) ListenMeow(val string) {
+func (lp listenParser) ListenMeow(val, proto string) {
 	if cmdHasListenAddr {
 		return
 	}
