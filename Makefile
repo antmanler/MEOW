@@ -3,12 +3,12 @@ HARDWARE=amd64
 PKG=github.com/antmanler/MEOW
 GITREV=$(shell git rev-parse --short HEAD)$(shell if ! git diff --quiet HEAD; then echo "-dirty"; fi )
 VERSION=dev
-RELEASE_VERSION=1.3.2
+RELEASE_VERSION=1.3.4
 
 build: meow
 
 release: VERSION=$(RELEASE_VERSION)
-release: build
+release: build container
 	@rm -rf release && mkdir release
 	GZIP=-9 tar -zcf release/$(NAME)_$(RELEASE_VERSION)_linux_$(HARDWARE).tgz -C build/linux MEOW
 	GZIP=-9 tar -zcf release/$(NAME)_$(RELEASE_VERSION)_darwin_$(HARDWARE).tgz -C build/darwin MEOW
@@ -32,5 +32,8 @@ build_dir:
 	@mkdir -p build/linux
 	@mkdir -p build/darwin
 	@mkdir -p build/windows
+
+container: build
+	docker build -t antmanler/meow:$(VERSION) .
 
 .PHONY: build
