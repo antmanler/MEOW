@@ -56,7 +56,6 @@ type Config struct {
 
 	// not configurable in config file
 	PrintVer        bool
-	EstimateTimeout bool // if run estimateTimeout()
 
 	// not config option
 	saveReqLine bool // for http and meow parent, should save request line from client
@@ -95,7 +94,6 @@ func parseCmdLineConfig() *Config {
 	flag.IntVar(&c.Core, "core", 2, "number of cores to use")
 	flag.StringVar(&c.LogFile, "logFile", "", "write output to file")
 	flag.BoolVar(&c.PrintVer, "version", false, "print version")
-	flag.BoolVar(&c.EstimateTimeout, "estimate", true, "enable/disable estimate timeout")
 	flag.StringVar(&c.Cert, "cert", "", "cert for local https proxy")
 	flag.StringVar(&c.Key, "key", "", "key for local https proxy")
 
@@ -146,12 +144,6 @@ func parseDuration(val, msg string) (d time.Duration) {
 	if d, err = time.ParseDuration(val); err != nil {
 		Fatalf("%s %v\n", msg, err)
 	}
-	return
-}
-
-func parseString(val string) (s string) {
-	s = strings.TrimLeft(val, `"'`)
-	s = strings.TrimRight(s, `"'`)
 	return
 }
 
@@ -303,7 +295,7 @@ func (lp listenParser) ListenHttp(val string, proto string) {
 	addListenProxy(newHttpProxy(addr, addrInPAC, proto))
 }
 
-func (lp listenParser) ListenMeow(val, proto string) {
+func (lp listenParser) ListenMeow(val string) {
 	if cmdHasListenAddr {
 		return
 	}
@@ -363,8 +355,11 @@ func (p configParser) ParseListen(val string) {
 	if method == zeroMethod {
 		Fatalf("no such listen protocol \"%s\"\n", arr[0])
 	}
-	args := []reflect.Value{reflect.ValueOf(server), reflect.ValueOf(protocol)}
-	method.Call(args)
+	if methodName == "ListenMeow" {
+		method.Call([]reflect.Value{reflect.ValueOf(server)})
+	} else {
+		method.Call([]reflect.Value{reflect.ValueOf(server), reflect.ValueOf(protocol)})
+	}
 }
 
 func (p configParser) ParseLogFile(val string) {
@@ -584,11 +579,11 @@ func (p configParser) ParseJudgeByIP(val string) {
 }
 
 func (p configParser) ParseCert(val string) {
-	config.Cert = parseString(val)
+	config.Cert = val
 }
 
 func (p configParser) ParseKey(val string) {
-	config.Key = parseString(val)
+	config.Key = val
 }
 
 // overrideConfig should contain options from command line to override options
@@ -735,8 +730,6 @@ func overrideConfig(oldconfig, override *Config) {
 			}
 		}
 	}
-
-	oldconfig.EstimateTimeout = override.EstimateTimeout
 }
 
 // Must call checkConfig before using config.

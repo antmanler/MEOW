@@ -9,7 +9,7 @@ import (
 	"github.com/cyfdecyf/bufio"
 )
 
-type DirectList struct {
+type DomainList struct {
 	Domain map[string]DomainType
 	sync.RWMutex
 }
@@ -22,67 +22,32 @@ const (
 	domainTypeProxy
 	domainTypeReject
 )
-const maxHostPart = 5
 
-func newDirectList() *DirectList {
-	return &DirectList{
+func newDomainList() *DomainList {
+	return &DomainList{
 		Domain: map[string]DomainType{},
 	}
 }
 
-func charIndex(host string, c byte) []int {
-	indices := make([]int, 0, maxHostPart+1)
-	n := len(host)
-
-	if n <= 1 {
-		return indices
-	}
-
-	for i := 0; i < n-1; i++ {
-		if host[i] == c {
-			indices = append(indices, i)
-		}
-	}
-	return indices
-}
-
-func domainSearch(domain map[string]DomainType, host string, isIP bool) (domainType DomainType, ok bool) {
-	if domainType, ok = domain[host]; !ok && !isIP {
-		indices := charIndex(host, '.')
-		n := len(indices)
-		if n > maxHostPart {
-			indices = indices[n-maxHostPart:]
-			n = maxHostPart
-		}
-
-		for i := 0; i < n; i++ {
-			suffix := host[indices[i]+1:]
-			if domainType, ok = domain[suffix]; ok {
-				break
-			}
-		}
-	}
-
-	if parentProxy.empty() {
-		if domainType == domainTypeReject {
-			return domainTypeReject, true
-		} else {
-			return domainTypeDirect, true
-		}
-	}
-	return
-}
-
-func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
+func (domainList *DomainList) judge(url *URL) (domainType DomainType) {
 	debug.Printf("judging host: %s", url.Host)
-
+	if domainList.Domain[url.Host] == domainTypeReject || domainList.Domain[url.Domain] == domainTypeReject {
+		debug.Printf("host or domain should reject")
+		return domainTypeReject
+	}
+	if parentProxy.empty() { // no way to retry, so always visit directly
+		return domainTypeDirect
+	}
 	if url.Domain == "" { // simple host or private ip
 		return domainTypeDirect
 	}
-
-	isIP, isPrivate := hostIsIP(url.Host)
-	if v, ok := domainSearch(directList.Domain, url.Host, isIP); ok {
-		return v
+	if domainList.Domain[url.Host] == domainTypeDirect || domainList.Domain[url.Domain] == domainTypeDirect {
+		debug.Printf("host or domain should direct")
+		return domainTypeDirect
+	}
+	if domainList.Domain[url.Host] == domainTypeProxy || domainList.Domain[url.Domain] == domainTypeProxy {
+		debug.Printf("host or domain should using proxy")
+		return domainTypeProxy
 	}
 
 	if !config.JudgeByIP {
@@ -90,9 +55,10 @@ func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
 	}
 
 	var ip string
+	isIP, isPrivate := hostIsIP(url.Host)
 	if isIP {
 		if isPrivate {
-			directList.add(url.Host, domainTypeDirect)
+			domainList.add(url.Host, domainTypeDirect)
 			return domainTypeDirect
 		}
 		ip = url.Host
@@ -106,23 +72,23 @@ func (directList *DirectList) shouldDirect(url *URL) (domainType DomainType) {
 	}
 
 	if ipShouldDirect(ip) {
-		directList.add(url.Host, domainTypeDirect)
+		domainList.add(url.Host, domainTypeDirect)
 		return domainTypeDirect
 	} else {
-		directList.add(url.Host, domainTypeProxy)
+		domainList.add(url.Host, domainTypeProxy)
 		return domainTypeProxy
 	}
 }
 
-func (directList *DirectList) add(host string, domainType DomainType) {
-	directList.Lock()
-	defer directList.Unlock()
-	directList.Domain[host] = domainType
+func (domainList *DomainList) add(host string, domainType DomainType) {
+	domainList.Lock()
+	defer domainList.Unlock()
+	domainList.Domain[host] = domainType
 }
 
-func (directList *DirectList) GetDirectList() []string {
+func (domainList *DomainList) GetDomainList() []string {
 	lst := make([]string, 0)
-	for site, domainType := range directList.Domain {
+	for site, domainType := range domainList.Domain {
 		if domainType == domainTypeDirect {
 			lst = append(lst, site)
 		}
@@ -130,7 +96,7 @@ func (directList *DirectList) GetDirectList() []string {
 	return lst
 }
 
-var directList = newDirectList()
+var domainList = newDomainList()
 
 func initDomainList(domainListFile string, domainType DomainType) {
 	var err error
@@ -144,8 +110,8 @@ func initDomainList(domainListFile string, domainType DomainType) {
 	}
 	defer f.Close()
 
-	directList.Lock()
-	defer directList.Unlock()
+	domainList.Lock()
+	defer domainList.Unlock()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		domain := strings.TrimSpace(scanner.Text())
@@ -153,7 +119,7 @@ func initDomainList(domainListFile string, domainType DomainType) {
 			continue
 		}
 		debug.Printf("Loaded domain %s as type %v", domain, domainType)
-		directList.Domain[domain] = domainType
+		domainList.Domain[domain] = domainType
 	}
 	if scanner.Err() != nil {
 		errl.Printf("Error reading domain list %s: %v\n", domainListFile, scanner.Err())

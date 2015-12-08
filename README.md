@@ -1,6 +1,6 @@
 # MEOW Proxy
 
-当前版本：1.3.2 [CHANGELOG](CHANGELOG)
+当前版本：1.3.4 [CHANGELOG](CHANGELOG)
 [![Build Status](https://travis-ci.org/renzhn/MEOW.png?branch=master)](https://travis-ci.org/renzhn/MEOW)
 
 <pre>
@@ -10,7 +10,25 @@
    \(__)|      国内网站直接连接，其他的网站使用代理连接
 </pre>
 
+## MEOW 可以用来
+- 作为全局 HTTP 代理（支持 PAC），可以智能分流（直连国内网站、使用代理连接其他网站）
+- 将 SOCKS5 等代理转换为 HTTP 代理，HTTP 代理能最大程度兼容各种软件（可以设置为程序代理）和设备（设置为系统全局代理）
+- 架设在内网（或者公网），为其他设备提供智能分流代理
+- 编译成一个无需任何依赖的可执行文件运行，支持各种平台（Win / Linux / OS X），甚至是树莓派（Linux ARM）
+
 ## 更新说明
+- 2015-12-03 Version 1.3.4
+
+       * 修正客户端连接未正确关闭 bug
+       * 修正对文件描述符过多错误的判断（too many open files）
+
+- 2015-11-22 Version 1.3.3
+
+       * 增加 `reject` 拒绝连接列表
+       * 支持作为 HTTPS 代理服务器监听
+       * 支持 HTTPS 代理服务器作为父代理
+	
+	
 - 2015-10-09 Version 1.3.2
 
        * 完全托管在 github，不再使用 meowproxy.me 域名，[新的下载地址](https://github.com/renzhn/MEOW/tree/gh-pages/dist/)
@@ -47,6 +65,8 @@
     # proxy = http://127.0.0.1:8087
     # shadowsocks 上级代理
     # proxy = ss://aes-128-cfb:password@example.server.com:25
+    # HTTPS 上级代理
+    # proxy = https://user:password@example.server.com:port
 
 ## 工作方式
 
